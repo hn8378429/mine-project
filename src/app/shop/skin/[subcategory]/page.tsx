@@ -2,7 +2,9 @@
 
 import { useParams } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
+import { FaHeart } from "react-icons/fa";
+import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 
 // Sample products for skin categories
 const allProducts: Record<
@@ -34,28 +36,28 @@ const allProducts: Record<
         "https://urbanmakes.com/wp-content/uploads/2025/10/retinol-packshot-with-carton-desktop-700x785-v1-250x250.webp",
     },
     {
-      id: 1,
+      id: 2,
       name: "PanOxyl Acne Creamy Wash Benzoyl Peroxide 4%, Daily Control",
       price: "$19.99",
       image:
         "https://urbanmakes.com/wp-content/uploads/2025/11/darf.jpg-250x250.webp",
     },
     {
-      id: 1,
+      id: 3,
       name: "Neutrogena Oil-Free Acne Wash. 9.1 oz / 269 ml",
       price: "$19.99",
       image:
         "https://urbanmakes.com/wp-content/uploads/2025/07/71MRpu3vNAL-250x250.jpg",
     },
     {
-      id: 1,
+      id: 4,
       name: "Some By Mi AHA-BHA-PHA 30Days Miracle Toner, 150ml",
       price: "$19.99",
       image:
         "https://urbanmakes.com/wp-content/uploads/2025/10/SBM_AHABHAPHAToner_Main_1400x.jpg-250x250.webp",
     },
     {
-      id: 1,
+      id: 5,
       name: "La Roche-Posay Mela B3 Dark Spot Serum w/ MELASYL™ Niacinamide, 30ml",
       price: "$19.99",
       image:
@@ -71,14 +73,14 @@ const allProducts: Record<
         "https://urbanmakes.com/wp-content/uploads/2025/08/71hTtgk7qVL._SL1500_-250x250.jpg",
     },
     {
-      id: 1,
+      id: 2,
       name: "Clinique Clarifying Lotion 3 Combination-Oily, 400ml",
       price: "$29.99",
       image:
         "https://urbanmakes.com/wp-content/uploads/2025/07/images-250x250.jpg",
     },
     {
-      id: 1,
+      id: 3,
       name: "Clinique Clarifying Lotion 4 Oily, 400ml",
       price: "$29.99",
       image:
@@ -94,13 +96,14 @@ const allProducts: Record<
         "https://urbanmakes.com/wp-content/uploads/2025/10/2023.11_USRx_Vitaleyez_PDP_1600x1600px_72ppi_4433baa5-6a2d-4c33-916b-3598ba96f651.jpg-250x250.webp",
     },
     {
-      id: 1,
+      id: 2,
       name: "Some By Mi V10 Hyal Lip Sun Protector SPF15, Berry",
       price: "$32.99",
       image:
         "https://urbanmakes.com/wp-content/uploads/2025/02/IMG_9646-1.jpeg",
-    },{
-      id: 1,
+    },
+    {
+      id: 3,
       name: "Mini Brow / Lash Spoolies, Pack of 10",
       price: "$32.99",
       image:
@@ -141,14 +144,14 @@ const allProducts: Record<
         "https://urbanmakes.com/wp-content/uploads/2025/10/some-by-mi-galactomyces-glutathione-daily-mask-63803129201023.jpg-250x250.webp",
     },
     {
-      id: 1,
+      id: 2,
       name: "Medicube Collagen Night Wrapping Mask, 75ml",
       price: "$23.99",
       image:
         "https://urbanmakes.com/wp-content/uploads/2025/08/61occWCJN-L._SL1500_-250x250.jpg",
     },
     {
-      id: 1,
+      id: 3,
       name: "Medicube Kojic Acid Turmeric Night Wrapping Mask, 75ml",
       price: "$23.99",
       image:
@@ -173,21 +176,22 @@ const allProducts: Record<
         "https://urbanmakes.com/wp-content/uploads/2025/08/51wb6gg04rL._SL1500_-250x250.jpg",
     },
     {
-      id: 1,
+      id: 2,
       name: "Anua Azelaic Acid 10 Hyaluron Redness Soothing Serum",
       price: "$11.99",
       image:
         "https://urbanmakes.com/wp-content/uploads/2025/10/51nR7ndiTZL._AC_UL900_SR615900_-250x250.jpg",
     },
     {
-      id: 1,
+      id: 3,
       name: "Medicube One Day Exosome Shot Pore Ampoule 2000, 30ml",
       price: "$11.99",
       image:
         "https://urbanmakes.com/wp-content/uploads/2025/08/71si-02TT-L-250x250.jpg",
     },
   ],
-  tools: [{
+  tools: [
+    {
       id: 1,
       name: "Nature Spell Cleanse & Exfoliate Silicone Body Brush",
       price: "$12.99",
@@ -200,7 +204,8 @@ const allProducts: Record<
       price: "$8.99",
       image:
         "https://urbanmakes.com/wp-content/uploads/2025/08/Product-page-sizes-_pink_22aea8c9-ef0f-4840-b6e3-67ffecd785e1.jpg-250x250.webp",
-    },],
+    },
+  ],
 };
 
 export default function SkinSubcategoryPage() {
@@ -208,6 +213,9 @@ export default function SkinSubcategoryPage() {
   const subcategory = decodeURIComponent(params.subcategory as string);
 
   const products = allProducts[subcategory] || [];
+
+  const { addToCart } = useCart();
+  const { toggleWishlist } = useWishlist();
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -225,8 +233,23 @@ export default function SkinSubcategoryPage() {
           {products.map((product) => (
             <div
               key={product.id}
-              className="border rounded p-4 flex flex-col items-center"
+              className="border rounded p-4 flex flex-col items-center relative"
             >
+              {/* Wishlist Icon */}
+              <button
+                className="absolute top-3 right-3 text-gray-400 hover:text-pink-500"
+                onClick={() =>
+                  toggleWishlist({
+                    id: String(product.id),
+                    title: product.name,
+                    image: product.image,
+                    price: parseFloat(product.price.replace("$", "")),
+                  })
+                }
+              >
+                <FaHeart size={20} />
+              </button>
+
               <Image
                 src={product.image}
                 alt={product.name}
@@ -234,14 +257,25 @@ export default function SkinSubcategoryPage() {
                 height={250}
                 className="object-contain mb-4"
               />
+
               <h2 className="font-medium mb-2 text-center">{product.name}</h2>
               <p className="text-pink-500 font-semibold mb-2">{product.price}</p>
-              <Link
-                href={`/shop/skin/${subcategory}/${product.id}`}
-                className="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600"
+
+              {/* ADD TO CART */}
+              <button
+                className="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600 w-full"
+                onClick={() =>
+                  addToCart({
+                    id: String(product.id),
+                    title: product.name,
+                    image: product.image,
+                    price: parseFloat(product.price.replace("$", "")),
+                    quantity: 1,
+                  })
+                }
               >
-                View Product
-              </Link>
+                Add to Cart
+              </button>
             </div>
           ))}
         </div>
