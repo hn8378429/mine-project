@@ -109,7 +109,7 @@ export default function SearchPage() {
         {/* Search Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Search Results for "{query}"
+            Search Results for &quot;{query}&quot;
           </h1>
           <p className="text-gray-600">
             {results.length > 0 
@@ -150,7 +150,7 @@ export default function SearchPage() {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">No products found</h2>
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              We couldn't find any products matching "{query}". Try different keywords or browse our categories.
+              We couldn&apos;t find any products matching &quot;{query}&quot;. Try different keywords or browse our categories.
             </p>
 
             {/* Suggested Searches */}
