@@ -24,6 +24,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [isSticky, setIsSticky] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   const hairItems: string[] = [
     "Shampoos & Co-wash",
@@ -55,6 +56,7 @@ export default function Header() {
     if (e.key === "Enter" && search.trim() !== "") {
       router.push(`/search?query=${encodeURIComponent(search.trim())}`);
       setSearch("");
+      setShowSearch(false);
     }
   };
 
@@ -84,6 +86,7 @@ export default function Header() {
       setMobileMenuOpen(false);
       setHairOpen(false);
       setSkinOpen(false);
+      setShowSearch(false);
     };
 
     // Listen for route changes
@@ -104,6 +107,7 @@ export default function Header() {
     setMobileMenuOpen(false);
     setHairOpen(false);
     setSkinOpen(false);
+    setShowSearch(false);
   };
 
   return (
@@ -192,8 +196,8 @@ export default function Header() {
 
         {/* Right Side */}
         <div className="flex items-center space-x-4">
-          {/* Search */}
-          <div className="relative">
+          {/* Desktop Search */}
+          <div className="hidden md:block relative">
             <MagnifyingGlassIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
@@ -208,7 +212,7 @@ export default function Header() {
                 {filteredHair.concat(filteredSkin).map((item) => (
                   <Link
                     key={item}
-                    href={`/shop/${item.toLowerCase().replace(/\s+/g, "-")}`}
+                    href={`/shop/${item.toLowerCase().includes("hair") ? "hair" : "skin"}/${item.toLowerCase().replace(/\s+/g, "-")}`}
                     className="block px-4 py-2 text-gray-800 hover:bg-pink-50 hover:text-pink-500"
                     onClick={() => setSearch("")}
                   >
@@ -222,11 +226,19 @@ export default function Header() {
             )}
           </div>
 
+          {/* Mobile Search Button */}
+          <button 
+            className="md:hidden text-gray-800 hover:text-pink-500"
+            onClick={() => setShowSearch(!showSearch)}
+          >
+            <MagnifyingGlassIcon className="h-6 w-6" />
+          </button>
+
           {/* Wishlist */}
           <Link href="/wishlist" className="relative">
             <HeartIcon className="h-6 w-6 text-gray-800 hover:text-pink-500" />
             {wishlist.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1">
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                 {wishlist.length}
               </span>
             )}
@@ -236,7 +248,7 @@ export default function Header() {
           <Link href="/cart" className="relative">
             <ShoppingCartIcon className="h-6 w-6 text-gray-800 hover:text-pink-500" />
             {totalItems > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1">
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                 {totalItems}
               </span>
             )}
@@ -267,6 +279,52 @@ export default function Header() {
           </button>
         </div>
       </div>
+
+      {/* Mobile Search Bar */}
+      {showSearch && (
+        <div className="md:hidden bg-white border-t px-4 py-3">
+          <div className="relative">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={handleSearch}
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+              autoFocus
+            />
+            <button
+              onClick={() => setShowSearch(false)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+          </div>
+          
+          {/* Mobile Search Results */}
+          {search.trim() !== "" && (
+            <div className="absolute left-0 right-0 bg-white border shadow-lg rounded-b-lg z-20 max-h-60 overflow-y-auto">
+              {filteredHair.concat(filteredSkin).map((item) => (
+                <Link
+                  key={item}
+                  href={`/shop/${item.toLowerCase().includes("hair") ? "hair" : "skin"}/${item.toLowerCase().replace(/\s+/g, "-")}`}
+                  className="block px-4 py-3 text-gray-800 hover:bg-pink-50 hover:text-pink-500 border-b"
+                  onClick={() => {
+                    setSearch("");
+                    setShowSearch(false);
+                  }}
+                >
+                  {item}
+                </Link>
+              ))}
+              {filteredHair.concat(filteredSkin).length === 0 && (
+                <div className="px-4 py-3 text-gray-400 border-b">No results found</div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
