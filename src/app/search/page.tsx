@@ -1,8 +1,8 @@
 // src/app/search/page.tsx
 "use client";
-export const dynamic = 'force-dynamic';
+
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 
 // Complete products database
@@ -48,7 +48,7 @@ const categories = [
   { name: "Fragrance", count: 2, icon: "🌸" },
 ];
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const [results, setResults] = useState<typeof allProducts>([]);
@@ -202,5 +202,19 @@ export default function SearchPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <div className="animate-pulse">Loading search results...</div>
+        </div>
+      </div>
+    }>
+      <SearchContent />
+    </Suspense>
   );
 }
