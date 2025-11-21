@@ -1,10 +1,9 @@
-// src/components/Footer.tsx
 "use client";
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
-// OpenWeatherMap API Configuration - Use your actual API key
+// OpenWeatherMap API Configuration
 const WEATHER_API_KEY = "799516eb838144f36c9cd7c6e8017e80";
 
 interface WeatherData {
@@ -27,6 +26,7 @@ interface LocationData {
 export default function Footer() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState("");
+  const [weatherSearchQuery, setWeatherSearchQuery] = useState(""); // New state for weather search
   const [weather, setWeather] = useState<WeatherData>({
     temperature: 0,
     description: '',
@@ -114,22 +114,27 @@ export default function Footer() {
     getUserLocation();
   }, []);
 
-  // Weather data fetcher based on user location
+  // Weather data fetcher based on user location or search
   useEffect(() => {
-    const fetchWeather = async () => {
-      if (!userLocation) return;
-
+    const fetchWeather = async (city?: string) => {
       try {
         setWeather(prev => ({ ...prev, loading: true, error: null }));
         
         let weatherUrl: string;
         
-        if (userLocation.city === "Your Location") {
-          // Use coordinates if city name not available
-          weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${userLocation.latitude}&lon=${userLocation.longitude}&appid=${WEATHER_API_KEY}&units=metric`;
+        if (city) {
+          // Use searched city
+          weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${WEATHER_API_KEY}&units=metric`;
+        } else if (userLocation) {
+          // Use current location
+          if (userLocation.city === "Your Location") {
+            weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${userLocation.latitude}&lon=${userLocation.longitude}&appid=${WEATHER_API_KEY}&units=metric`;
+          } else {
+            weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${userLocation.city},${userLocation.country}&appid=${WEATHER_API_KEY}&units=metric`;
+          }
         } else {
-          // Use city name for better accuracy
-          weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${userLocation.city},${userLocation.country}&appid=${WEATHER_API_KEY}&units=metric`;
+          // Default to Karachi
+          weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=Karachi&appid=${WEATHER_API_KEY}&units=metric`;
         }
         
         const response = await fetch(weatherUrl);
@@ -209,20 +214,67 @@ export default function Footer() {
     return string.charAt(0).toUpperCase() + string.slice(1);
   };
 
+  // Product search handler
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Implement your search logic here
-      console.log("Searching for:", searchQuery);
-      // You can redirect to search page: router.push(`/search?q=${searchQuery}`);
+      console.log("Searching for products:", searchQuery);
+    }
+  };
+
+  // Weather search handler
+  const handleWeatherSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (weatherSearchQuery.trim()) {
+      fetchWeatherByCity(weatherSearchQuery.trim());
+    }
+  };
+
+  // Fetch weather by city name
+  const fetchWeatherByCity = async (city: string) => {
+    try {
+      setWeather(prev => ({ ...prev, loading: true, error: null }));
+      
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${WEATHER_API_KEY}&units=metric`
+      );
+      
+      if (!response.ok) {
+        throw new Error('City not found');
+      }
+      
+      const data = await response.json();
+      
+      setWeather({
+        temperature: Math.round(data.main.temp),
+        description: data.weather[0].description,
+        icon: data.weather[0].icon,
+        city: data.name,
+        country: data.sys.country,
+        loading: false,
+        error: null
+      });
+      
+      // Clear search query after successful search
+      setWeatherSearchQuery("");
+    } catch (error) {
+      console.error('Error fetching weather:', error);
+      setWeather(prev => ({
+        ...prev,
+        loading: false,
+        error: 'City not found. Try another location.'
+      }));
     }
   };
 
   const refreshWeather = () => {
+    setWeather(prev => ({ ...prev, loading: true, error: null }));
+    // Reset to current location
     if (userLocation) {
-      setWeather(prev => ({ ...prev, loading: true, error: null }));
-      // Trigger re-fetch by updating a dummy state
       setUserLocation(prev => prev ? { ...prev } : null);
+    } else {
+      // Fallback to default
+      fetchWeatherByCity("Karachi");
     }
   };
 
@@ -423,28 +475,53 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold text-lg mb-4 text-pink-400">Store Info</h4>
             <div className="text-gray-300 space-y-3">
+              {/* Weather Section with Search */}
               <div className="bg-gray-800 rounded-lg p-4">
-                <div className="flex justify-between items-start mb-2">
+                <div className="flex justify-between items-start mb-3">
                   <div className="font-semibold">🌡️ Current Weather</div>
                   <button 
                     onClick={refreshWeather}
                     className="text-xs text-gray-400 hover:text-white transition-colors"
-                    title="Refresh weather"
+                    title="Refresh to current location"
                   >
                     🔄
                   </button>
                 </div>
+                
+                {/* Weather Search */}
+                <form onSubmit={handleWeatherSearch} className="relative mb-3">
+                  <input
+                    type="text"
+                    value={weatherSearchQuery}
+                    onChange={(e) => setWeatherSearchQuery(e.target.value)}
+                    placeholder="Search weather by city..."
+                    className="w-full px-3 py-2 text-sm rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-pink-500 border border-gray-600"
+                  />
+                  <button 
+                    type="submit"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-pink-500 text-white p-1 rounded text-xs hover:bg-pink-600 transition-colors"
+                    title="Search weather"
+                  >
+                    🔍
+                  </button>
+                </form>
+
+                {/* Weather Display */}
                 {weather.loading ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span className="text-sm">Detecting location...</span>
+                    <span className="text-sm">Loading weather...</span>
                   </div>
                 ) : weather.error ? (
                   <div className="text-sm text-gray-400">
-                    {weather.error === "Geolocation not supported" 
-                      ? "Location not supported" 
-                      : "Weather unavailable"
-                    }
+                    {weather.error}
+                    <br />
+                    <button 
+                      onClick={refreshWeather}
+                      className="text-pink-400 hover:text-pink-300 text-xs mt-1"
+                    >
+                      Try Again
+                    </button>
                   </div>
                 ) : (
                   <>
@@ -452,12 +529,21 @@ export default function Footer() {
                       <span className="text-lg">{getWeatherIcon(weather.icon)}</span>
                       <span>{weather.temperature}°C - {capitalizeFirstLetter(weather.description)}</span>
                     </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      📍 {weather.city}{weather.country && `, ${weather.country}`}
+                    <div className="text-xs text-gray-400 mt-1 flex justify-between items-center">
+                      <span>📍 {weather.city}{weather.country && `, ${weather.country}`}</span>
+                      <button 
+                        onClick={() => setWeatherSearchQuery(weather.city)}
+                        className="text-pink-400 hover:text-pink-300 text-xs"
+                        title="Search this city again"
+                      >
+                        📌
+                      </button>
                     </div>
                   </>
                 )}
               </div>
+
+              {/* Local Time */}
               <div className="bg-gray-800 rounded-lg p-4">
                 <div className="font-semibold">🕒 Local Time</div>
                 <div>{formatTime(currentTime)}</div>
