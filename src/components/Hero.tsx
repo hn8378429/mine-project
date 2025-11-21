@@ -161,7 +161,7 @@ export default function Hero() {
 
         {/* Feature Tags - In a row */}
         <div className="flex justify-center gap-3">
-          {["HYDRATE!", "GROW!", "REDAIR!"].map((tag) => (
+          {["HYDRATE!", "GROW!", "REPAIR!"].map((tag) => (
             <span
               key={tag}
               className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium"
