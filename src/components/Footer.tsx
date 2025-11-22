@@ -47,6 +47,55 @@ export default function Footer() {
     return () => clearInterval(timer);
   }, []);
 
+  // Fetch weather function - MOVED OUTSIDE OF useEffect
+  const fetchWeather = async (city?: string) => {
+    try {
+      setWeather(prev => ({ ...prev, loading: true, error: null }));
+      
+      let weatherUrl: string;
+      
+      if (city) {
+        // Use searched city
+        weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${WEATHER_API_KEY}&units=metric`;
+      } else if (userLocation) {
+        // Use current location
+        if (userLocation.city === "Your Location") {
+          weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${userLocation.latitude}&lon=${userLocation.longitude}&appid=${WEATHER_API_KEY}&units=metric`;
+        } else {
+          weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${userLocation.city},${userLocation.country}&appid=${WEATHER_API_KEY}&units=metric`;
+        }
+      } else {
+        // Default to Karachi
+        weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=Karachi&appid=${WEATHER_API_KEY}&units=metric`;
+      }
+      
+      const response = await fetch(weatherUrl);
+      
+      if (!response.ok) {
+        throw new Error('Weather data not available');
+      }
+      
+      const data = await response.json();
+      
+      setWeather({
+        temperature: Math.round(data.main.temp),
+        description: data.weather[0].description,
+        icon: data.weather[0].icon,
+        city: data.name,
+        country: data.sys.country,
+        loading: false,
+        error: null
+      });
+    } catch (error) {
+      console.error('Error fetching weather:', error);
+      setWeather(prev => ({
+        ...prev,
+        loading: false,
+        error: 'Unable to fetch weather data'
+      }));
+    }
+  };
+
   // Get user's current location
   useEffect(() => {
     const getUserLocation = () => {
@@ -114,56 +163,8 @@ export default function Footer() {
     getUserLocation();
   }, []);
 
-  // Weather data fetcher based on user location or search
+  // Weather data fetcher based on user location
   useEffect(() => {
-    const fetchWeather = async (city?: string) => {
-      try {
-        setWeather(prev => ({ ...prev, loading: true, error: null }));
-        
-        let weatherUrl: string;
-        
-        if (city) {
-          // Use searched city
-          weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${WEATHER_API_KEY}&units=metric`;
-        } else if (userLocation) {
-          // Use current location
-          if (userLocation.city === "Your Location") {
-            weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${userLocation.latitude}&lon=${userLocation.longitude}&appid=${WEATHER_API_KEY}&units=metric`;
-          } else {
-            weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${userLocation.city},${userLocation.country}&appid=${WEATHER_API_KEY}&units=metric`;
-          }
-        } else {
-          // Default to Karachi
-          weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=Karachi&appid=${WEATHER_API_KEY}&units=metric`;
-        }
-        
-        const response = await fetch(weatherUrl);
-        
-        if (!response.ok) {
-          throw new Error('Weather data not available');
-        }
-        
-        const data = await response.json();
-        
-        setWeather({
-          temperature: Math.round(data.main.temp),
-          description: data.weather[0].description,
-          icon: data.weather[0].icon,
-          city: data.name,
-          country: data.sys.country,
-          loading: false,
-          error: null
-        });
-      } catch (error) {
-        console.error('Error fetching weather:', error);
-        setWeather(prev => ({
-          ...prev,
-          loading: false,
-          error: 'Unable to fetch weather data'
-        }));
-      }
-    };
-
     if (userLocation) {
       fetchWeather();
     }
@@ -226,44 +227,7 @@ export default function Footer() {
   const handleWeatherSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (weatherSearchQuery.trim()) {
-      fetchWeatherByCity(weatherSearchQuery.trim());
-    }
-  };
-
-  // Fetch weather by city name
-  const fetchWeatherByCity = async (city: string) => {
-    try {
-      setWeather(prev => ({ ...prev, loading: true, error: null }));
-      
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${WEATHER_API_KEY}&units=metric`
-      );
-      
-      if (!response.ok) {
-        throw new Error('City not found');
-      }
-      
-      const data = await response.json();
-      
-      setWeather({
-        temperature: Math.round(data.main.temp),
-        description: data.weather[0].description,
-        icon: data.weather[0].icon,
-        city: data.name,
-        country: data.sys.country,
-        loading: false,
-        error: null
-      });
-      
-      // Clear search query after successful search
-      setWeatherSearchQuery("");
-    } catch (error) {
-      console.error('Error fetching weather:', error);
-      setWeather(prev => ({
-        ...prev,
-        loading: false,
-        error: 'City not found. Try another location.'
-      }));
+      fetchWeather(weatherSearchQuery.trim());
     }
   };
 
@@ -271,10 +235,10 @@ export default function Footer() {
     setWeather(prev => ({ ...prev, loading: true, error: null }));
     // Reset to current location
     if (userLocation) {
-      setUserLocation(prev => prev ? { ...prev } : null);
+      fetchWeather();
     } else {
       // Fallback to default
-      fetchWeatherByCity("Karachi");
+      fetchWeather("Karachi");
     }
   };
 
